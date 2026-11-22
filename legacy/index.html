@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Our split</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F5F1; --surface:#FFFFFF; --ink:#16211D; --muted:#5C6A64; --line:#D9E1DC;
+  --teal:#0E6B59; --teal-soft:#DCEFE9; --plum:#9E2F4C;
+  --hero-bg:#0E4F43; --hero-ink:#EEF6F2; --hero-line:rgba(238,246,242,.18); --hero-line-strong:rgba(238,246,242,.5);
+  --focus:#0E6B59;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#111816; --surface:#1A2320; --ink:#E4ECE8; --muted:#95A59E; --line:#2B3733;
+    --teal:#56C9AD; --teal-soft:#163A32; --plum:#F08AA4;
+    --hero-bg:#1B4A40; --hero-ink:#EAF5F1; --hero-line:rgba(234,245,241,.16); --hero-line-strong:rgba(234,245,241,.45);
+    --focus:#56C9AD; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#111816; --surface:#1A2320; --ink:#E4ECE8; --muted:#95A59E; --line:#2B3733;
+  --teal:#56C9AD; --teal-soft:#163A32; --plum:#F08AA4;
+  --hero-bg:#1B4A40; --hero-ink:#EAF5F1; --hero-line:rgba(234,245,241,.16); --hero-line-strong:rgba(234,245,241,.45);
+  --focus:#56C9AD; color-scheme: dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:"Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size:16px; line-height:1.45; font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:760px;margin:0 auto;padding:32px 20px 80px}
+h1{font-size:clamp(30px,6vw,44px);font-weight:800;letter-spacing:-0.025em;line-height:1;margin:0}
+h2{font-size:20px;font-weight:700;letter-spacing:-0.01em;margin:0 0 14px}
+.sub{color:var(--muted);margin:8px 0 0;font-size:15px}
+.toprow{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.cur{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px}
+.cur select{min-height:40px;padding:6px 10px}
+.tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tools .btn-line{min-height:40px;padding:6px 14px;font-size:14px}
+
+input,select{
+  font:inherit;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px;width:100%;
+}
+select{width:auto}
+.field select{width:100%}
+input::placeholder{color:var(--muted);opacity:.8}
+button{font:inherit;cursor:pointer;color:inherit}
+button:disabled,input:disabled,select:disabled{cursor:not-allowed;opacity:.55}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.btn{background:var(--ink);color:var(--paper);border:0;border-radius:10px;padding:10px 20px;font-weight:700;min-height:44px}
+.btn-line{background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-weight:500;min-height:44px}
+
+/* People */
+.people{margin-top:20px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.people .lead{color:var(--muted);font-size:15px;margin-right:2px}
+.chip{display:inline-flex;align-items:center;gap:2px;padding:4px 4px 4px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-weight:600}
+.chip button{border:0;background:transparent;color:var(--muted);width:30px;height:30px;border-radius:50%;font-size:18px;line-height:1}
+.chip button:hover{background:var(--paper);color:var(--ink)}
+.addperson{display:inline-flex;gap:6px}
+.addperson input{width:150px;min-height:40px;padding:6px 12px;border-radius:999px}
+.addperson button{min-height:40px;border-radius:999px;padding:6px 14px}
+
+/* Settle-up hero */
+.settle{margin-top:28px;background:var(--hero-bg);color:var(--hero-ink);border-radius:22px;padding:22px clamp(20px,4vw,32px) 24px}
+.settle h2{font-size:15px;font-weight:500;opacity:.8;margin:0 0 6px}
+.tx{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;padding:12px 0;border-top:1px solid var(--hero-line)}
+.tx:first-of-type{border-top:0}
+.tx p{margin:0;font-size:clamp(21px,4.4vw,31px);font-weight:400;line-height:1.2;letter-spacing:-0.015em}
+.tx strong{font-weight:800}
+.tx .amt{white-space:nowrap;font-weight:800}
+.markpaid{background:transparent;color:var(--hero-ink);border:1px solid var(--hero-line-strong);border-radius:999px;padding:6px 14px;font-size:14px;font-weight:600;white-space:nowrap;min-height:36px}
+.markpaid:hover{background:var(--hero-line)}
+.settle-msg{font-size:clamp(20px,4vw,27px);font-weight:500;margin:4px 0 0;line-height:1.25;letter-spacing:-0.01em}
+.totals{margin:14px 0 0;font-size:15px;opacity:.85}
+
+/* Form */
+.panel{margin-top:28px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label,.fieldlabel{font-size:14px;color:var(--muted);font-weight:500}
+.full{grid-column:1/-1}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;background:var(--paper);min-height:44px}
+.seg input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.seg label{flex:1;display:flex;align-items:center;justify-content:center;padding:6px 12px;border-radius:8px;cursor:pointer;color:var(--muted);font-size:15px;font-weight:600}
+.seg input:checked + label{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.seg input:focus-visible + label{outline:2px solid var(--focus);outline-offset:1px}
+.splits{display:flex;flex-wrap:wrap;gap:8px}
+.tog{position:relative;cursor:pointer}
+.tog input{position:absolute;opacity:0;width:1px;height:1px}
+.tog span{display:inline-block;padding:8px 14px;border-radius:999px;border:1px solid var(--line);color:var(--muted);font-weight:600}
+.tog input:checked + span{background:var(--teal-soft);border-color:var(--teal);color:var(--ink)}
+.tog input:focus-visible + span{outline:2px solid var(--focus);outline-offset:2px}
+.formfoot{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:18px}
+.hint{margin:0;color:var(--muted);font-size:14px}
+
+/* Balances */
+.balances,.history{margin-top:40px}
+.bal{display:grid;grid-template-columns:minmax(110px,1.1fr) 2fr minmax(110px,auto);align-items:center;gap:8px 16px;padding:12px 0;border-top:1px solid var(--line)}
+.bal .name{font-weight:700}
+.bal .meta{font-size:13px;color:var(--muted)}
+.bar{position:relative;height:12px}
+.bar::before{content:"";position:absolute;left:50%;top:-5px;bottom:-5px;width:1px;background:var(--line)}
+.bar i{position:absolute;top:0;bottom:0;border-radius:3px}
+.bar i.pos{left:50%;background:var(--teal)}
+.bar i.neg{right:50%;background:var(--plum)}
+.net{font-weight:700;text-align:right;white-space:nowrap}
+.net.pos{color:var(--teal)}
+.net.neg{color:var(--plum)}
+.net.even{color:var(--muted);font-weight:500}
+
+/* History */
+.history ul{list-style:none;margin:0;padding:0}
+.history li{display:grid;grid-template-columns:1fr auto;gap:2px 16px;padding:12px 0;border-top:1px solid var(--line)}
+.h-title{font-weight:600;overflow-wrap:anywhere}
+.h-amt{font-weight:700;text-align:right;white-space:nowrap}
+.h-meta{font-size:13px;color:var(--muted)}
+.h-del{justify-self:end;background:none;border:0;color:var(--muted);font-size:13px;padding:2px 0;text-decoration:underline;text-underline-offset:2px}
+.h-del.confirm{color:var(--plum);font-weight:700}
+.k-investment{color:var(--teal);font-weight:600}
+.empty{color:var(--muted);margin:0;padding:12px 0;border-top:1px solid var(--line)}
+
+/* Toast */
+.toastwrap{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:0 16px calc(18px + env(safe-area-inset-bottom,0px));pointer-events:none;z-index:20}
+.toast{background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font-size:15px;font-weight:500;max-width:520px;opacity:0;transform:translateY(8px)}
+.toast.show{opacity:1;transform:none}
+@media (prefers-reduced-motion: no-preference){ .toast{transition:opacity .2s, transform .2s} }
+
+@media (max-width:560px){
+  .grid{grid-template-columns:1fr}
+  .bal{grid-template-columns:1fr auto}
+  .bar{grid-column:1/-1;order:3;margin:6px 0 2px}
+  .addperson input{width:130px}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <div class="toprow">
+      <div>
+        <h1>Our split</h1>
+        <p class="sub" id="status" aria-live="polite">Loading…</p>
+      </div>
+      <div class="tools">
+        <button class="btn-line" type="button" id="copyLink" hidden>Copy share link</button>
+        <label class="cur" for="currency">Currency <select id="currency"></select></label>
+      </div>
+    </div>
+    <div class="people" id="people"></div>
+  </header>
+
+  <section class="settle" id="settle" aria-live="polite"></section>
+
+  <section class="panel" aria-labelledby="add-h">
+    <h2 id="add-h">Add a cost or investment</h2>
+    <form id="entryForm" autocomplete="off" novalidate>
+      <div class="grid">
+        <div class="field"><label for="payer">Who paid</label><select id="payer"></select></div>
+        <div class="field"><label for="amount">Amount</label><input id="amount" inputmode="decimal" placeholder="0.00"></div>
+        <div class="field"><label for="note">What for</label><input id="note" maxlength="80" placeholder="Groceries, rent, a new camera…"></div>
+        <div class="field"><span class="fieldlabel" id="kind-l">Type</span>
+          <div class="seg" role="radiogroup" aria-labelledby="kind-l">
+            <input type="radio" name="kind" id="k-cost" value="cost" checked><label for="k-cost">Cost</label>
+            <input type="radio" name="kind" id="k-inv" value="investment"><label for="k-inv">Investment</label>
+          </div>
+        </div>
+        <div class="field full"><span class="fieldlabel" id="split-l">Split equally between</span>
+          <div class="splits" id="splits" role="group" aria-labelledby="split-l"></div>
+        </div>
+      </div>
+      <div class="formfoot"><p class="hint" id="formHint"></p><button class="btn" type="submit" id="addBtn">Add</button></div>
+    </form>
+  </section>
+
+  <section class="balances" aria-labelledby="bal-h">
+    <h2 id="bal-h">Where everyone stands</h2>
+    <div id="balances"></div>
+  </section>
+
+  <section class="history" aria-labelledby="hist-h">
+    <h2 id="hist-h">History</h2>
+    <ul id="history"></ul>
+  </section>
+</main>
+<div class="toastwrap"><div class="toast" id="toast" role="status" aria-live="polite"></div></div>
+
+<script type="module">
+/* =====================================================================
+   1) Paste your Supabase details below (Supabase dashboard >
+      Project Settings > API). Use the project URL and the anon / publishable
+      key, never the service_role / secret key.
+      Leave them empty and the app still works, saved on this device only.
+   ===================================================================== */
+const SUPABASE_URL = "";       // e.g. "https://abcdefghijkl.supabase.co"
+const SUPABASE_ANON_KEY = "";  // e.g. "eyJhbGciOi..." or "sb_publishable_..."
+const SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/+esm";
+
+const CURRENCIES = ["€","$","£","₹","¥","CHF","kr","zł"];
+const LS_KEY = "our-split-v1";
+const state = { members: [], currency: "€", entries: [] };
+let mode = "loading";            // loading | shared | local
+let readOnly = false, stale = false, broken = false, setupProblem = "";
+let loaded = false;
+let sb = null, channel = null, groupId = null;
+let inflight = 0, needRefresh = false, fetchSeq = 0;
+const excluded = new Set();
+let pendingDelete = null, pendingTimer = null, toastTimer = null;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = () => randomId(16);
+const ids = () => state.members.map(m => m.id);
+const nameOf = id => { const m = state.members.find(x => x.id === id); return m ? m.name : "Someone"; };
+
+function randomId(len = 20){
+  const abc = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const buf = new Uint32Array(len); crypto.getRandomValues(buf);
+  return Array.from(buf, n => abc[n % abc.length]).join("");
+}
+function fmt(cents){
+  const v = Math.abs(cents) / 100;
+  const n = v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const sym = state.currency;
+  return sym.length > 1 ? n + " " + sym : sym + n;
+}
+function parseAmount(str){
+  let s = String(str || "").replace(/\s/g, "");
+  if (s.includes(",") && s.includes(".")) s = s.replace(/,/g, "");
+  else s = s.replace(",", ".");
+  if (!/^\d*\.?\d*$/.test(s)) return NaN;
+  const v = parseFloat(s);
+  return Number.isFinite(v) ? Math.round(v * 100) : NaN;
+}
+function listNames(arr){
+  const n = arr.map(nameOf);
+  if (n.length <= 1) return n.join("");
+  return n.slice(0, -1).join(", ") + " and " + n[n.length - 1];
+}
+
+/* ---------- sanitising stored data ---------- */
+function cleanMembers(arr){
+  if (!Array.isArray(arr)) return [];
+  const seen = new Set();
+  return arr.filter(m => m && typeof m.id === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(m.id) && typeof m.name === "string" && !seen.has(m.id) && seen.add(m.id))
+            .map(m => ({ id: m.id, name: m.name.slice(0, 30) }));
+}
+function cleanEntry(id, d){
+  if (!d || typeof id !== "string") return null;
+  const amount = Number(d.amount);
+  if (!Number.isInteger(amount) || amount <= 0) return null;
+  if (typeof d.payer !== "string" || !Array.isArray(d.among)) return null;
+  const kind = ["cost","investment","payment"].includes(d.kind) ? d.kind : "cost";
+  return { id, payer: d.payer, amount, kind, among: d.among.filter(x => typeof x === "string"),
+           note: typeof d.note === "string" ? d.note.slice(0, 120) : "", at: Number(d.at) || 0 };
+}
+
+/* ---------- the maths (all in cents) ---------- */
+function compute(){
+  const list = ids();
+  const paid = {}, owed = {}, putIn = {}, fairShare = {};
+  list.forEach(id => { paid[id] = 0; owed[id] = 0; putIn[id] = 0; fairShare[id] = 0; });
+  let costs = 0, inv = 0;
+  for (const e of state.entries){
+    if (!list.includes(e.payer)) continue;
+    const among = list.filter(id => e.among.includes(id)); // member order keeps leftover cents stable
+    if (!among.length) continue;
+    paid[e.payer] += e.amount;
+    if (e.kind !== "payment"){ putIn[e.payer] += e.amount; if (e.kind === "investment") inv += e.amount; else costs += e.amount; }
+    const base = Math.floor(e.amount / among.length);
+    const rest = e.amount - base * among.length;
+    among.forEach((id, i) => {
+      const part = base + (i < rest ? 1 : 0);
+      owed[id] += part;
+      if (e.kind !== "payment") fairShare[id] += part;
+    });
+  }
+  const net = {};
+  list.forEach(id => net[id] = paid[id] - owed[id]);
+  // greedy match: biggest debtor pays biggest creditor -> few transfers
+  const cred = list.filter(id => net[id] > 0).map(id => ({ id, v: net[id] })).sort((a, b) => b.v - a.v);
+  const debt = list.filter(id => net[id] < 0).map(id => ({ id, v: -net[id] })).sort((a, b) => b.v - a.v);
+  const transfers = [];
+  let i = 0, j = 0;
+  while (i < debt.length && j < cred.length){
+    const x = Math.min(debt[i].v, cred[j].v);
+    if (x > 0) transfers.push({ from: debt[i].id, to: cred[j].id, amount: x });
+    debt[i].v -= x; cred[j].v -= x;
+    if (debt[i].v === 0) i++;
+    if (cred[j].v === 0) j++;
+  }
+  return { net, putIn, fairShare, transfers, costs, inv };
+}
+
+/* ---------- rendering ---------- */
+const busy = () => mode === "loading" || (mode === "shared" && !loaded);
+const locked = () => busy() || readOnly || broken;
+
+function render(){
+  renderStatus(); renderCurrency(); renderPeople();
+  const r = compute();
+  renderSettle(r); renderForm(); renderBalances(r); renderHistory();
+}
+
+function renderStatus(){
+  let t;
+  if (busy()) t = "Loading…";
+  else if (broken) t = setupProblem || "Can’t load the shared data right now.";
+  else if (mode === "shared") t = stale ? "Can’t reach the server yet, so this may be out of date." : "Shared live with everyone who has this link.";
+  else t = "Saved on this device only. Add your Supabase details to share it.";
+  
+  $("status").textContent = t;
+  $("copyLink").hidden = mode !== "shared";
+}
+
+function renderCurrency(){
+  const sel = $("currency");
+  const opts = CURRENCIES.includes(state.currency) ? CURRENCIES : [state.currency].concat(CURRENCIES);
+  sel.innerHTML = opts.map(c => `<option value="${esc(c)}"${c === state.currency ? " selected" : ""}>${esc(c)}</option>`).join("");
+  sel.disabled = locked();
+}
+
+function renderPeople(){
+  const wrap = $("people");
+  const keep = document.activeElement && document.activeElement.id === "newPerson" ? $("newPerson").value : null;
+  const chips = state.members.map(m =>
+    `<span class="chip">${esc(m.name)}<button type="button" data-action="remove-member" data-id="${esc(m.id)}" aria-label="Remove ${esc(m.name)}"${locked() ? " disabled" : ""}>×</button></span>`
+  ).join("");
+  wrap.innerHTML = `<span class="lead">${state.members.length ? "Sharing:" : "Who’s sharing?"}</span>${chips}
+    <form class="addperson" id="personForm"><input id="newPerson" maxlength="30" placeholder="Add a name" aria-label="Add a person"${locked() ? " disabled" : ""}>
+    <button class="btn-line" type="submit"${locked() ? " disabled" : ""}>Add person</button></form>`;
+  if (keep !== null){ const i = $("newPerson"); i.value = keep; i.focus(); }
+}
+
+function renderSettle(r){
+  let html = `<h2>To settle up</h2>`;
+  if (busy()) html += `<p class="settle-msg">Loading…</p>`;
+  else if (state.members.length < 2) html += `<p class="settle-msg">Add the people sharing the money, then log what each of you pays.</p>`;
+  else if (!state.entries.length) html += `<p class="settle-msg">Nothing to settle yet. Add a cost or an investment below.</p>`;
+  else if (!r.transfers.length) html += `<p class="settle-msg">All square. Nobody owes anybody.</p>`;
+  else {
+    html += r.transfers.map(t => `<div class="tx"><p><strong>${esc(nameOf(t.from))}</strong> pays <strong>${esc(nameOf(t.to))}</strong> <span class="amt">${esc(fmt(t.amount))}</span></p>
+      <button class="markpaid" type="button" data-action="mark-paid" data-from="${esc(t.from)}" data-to="${esc(t.to)}" data-amount="${t.amount}"${locked() ? " disabled" : ""}>Mark paid</button></div>`).join("");
+  }
+  if (!busy() && (r.costs || r.inv)){
+    const parts = [];
+    if (r.costs) parts.push(`${fmt(r.costs)} in costs`);
+    if (r.inv) parts.push(`${fmt(r.inv)} in investments`);
+    html += `<p class="totals">${esc(parts.join(" and "))} so far.</p>`;
+  }
+  $("settle").innerHTML = html;
+}
+
+function renderForm(){
+  const list = state.members;
+  const payer = $("payer");
+  const prev = payer.value;
+  payer.innerHTML = list.map(m => `<option value="${esc(m.id)}">${esc(m.name)}</option>`).join("");
+  if (list.some(m => m.id === prev)) payer.value = prev;
+
+  $("splits").innerHTML = list.length
+    ? list.map(m => `<label class="tog"><input type="checkbox" data-split="${esc(m.id)}"${excluded.has(m.id) ? "" : " checked"}${locked() ? " disabled" : ""}><span>${esc(m.name)}</span></label>`).join("")
+    : `<span class="hint">Add people first.</span>`;
+
+  const off = locked() || list.length < 2;
+  ["payer","amount","note","k-cost","k-inv","addBtn"].forEach(id => $(id).disabled = off);
+  let hint = "";
+  if (!busy() && !readOnly && !broken && list.length < 2) hint = "Add at least two people above.";
+  else if (!off){
+    const n = list.filter(m => !excluded.has(m.id)).length;
+    hint = n === list.length ? "Split equally between everyone." : n ? `Split equally between ${n} of ${list.length}.` : "Pick at least one person.";
+  }
+  $("formHint").textContent = hint;
+}
+
+function renderBalances(r){
+  const el = $("balances");
+  if (busy()){ el.innerHTML = `<p class="empty">Loading…</p>`; return; }
+  if (!state.members.length){ el.innerHTML = `<p class="empty">No one here yet.</p>`; return; }
+  const max = Math.max(1, ...state.members.map(m => Math.abs(r.net[m.id])));
+  el.innerHTML = state.members.map(m => {
+    const n = r.net[m.id], w = (Math.abs(n) / max) * 50;
+    const cls = n > 0 ? "pos" : n < 0 ? "neg" : "even";
+    const label = n > 0 ? `gets back ${fmt(n)}` : n < 0 ? `owes ${fmt(n)}` : "even";
+    return `<div class="bal">
+      <div><div class="name">${esc(m.name)}</div><div class="meta">put in ${esc(fmt(r.putIn[m.id]))}, share ${esc(fmt(r.fairShare[m.id]))}</div></div>
+      <div class="bar" aria-hidden="true">${n ? `<i class="${cls}" style="width:${w.toFixed(2)}%"></i>` : ""}</div>
+      <div class="net ${cls}">${esc(label)}</div></div>`;
+  }).join("");
+}
+
+function renderHistory(){
+  const el = $("history");
+  if (busy()){ el.innerHTML = `<li class="empty">Loading…</li>`; return; }
+  if (!state.entries.length){ el.innerHTML = `<li class="empty">Nothing logged yet.</li>`; return; }
+  const all = ids();
+  el.innerHTML = state.entries.map(e => {
+    const date = e.at ? new Date(e.at).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "";
+    let title, meta;
+    if (e.kind === "payment"){
+      title = `${nameOf(e.payer)} paid ${listNames(e.among)} back`;
+      meta = `<span>Settle-up payment</span>`;
+    } else {
+      const label = e.kind === "investment" ? "Investment" : "Cost";
+      title = e.note || label;
+      const inSplit = all.filter(id => e.among.includes(id));
+      const who = inSplit.length === all.length ? "split between everyone" : inSplit.length === 1 ? `for ${listNames(inSplit)}` : `split between ${listNames(inSplit)}`;
+      meta = `<span class="k-${e.kind}">${label}</span>, paid by ${esc(nameOf(e.payer))}, ${esc(who)}`;
+    }
+    const confirming = pendingDelete === e.id;
+    return `<li><span class="h-title">${esc(title)}</span><span class="h-amt">${esc(fmt(e.amount))}</span>
+      <span class="h-meta">${meta}${date ? ", " + esc(date) : ""}</span>
+      <button type="button" class="h-del${confirming ? " confirm" : ""}" data-action="delete" data-id="${esc(e.id)}"${locked() ? " disabled" : ""}>${confirming ? "Tap again to delete" : "Delete"}</button></li>`;
+  }).join("");
+}
+
+function toast(msg){
+  const t = $("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 3200);
+}
+
+/* ---------- storage: Supabase when configured, else localStorage ---------- */
+function loadLocal(){
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    state.members = cleanMembers(d.members);
+    state.currency = typeof d.currency === "string" && d.currency ? d.currency.slice(0, 4) : "€";
+    state.entries = (Array.isArray(d.entries) ? d.entries : []).map(e => cleanEntry(e && e.id, e)).filter(Boolean);
+  } catch (e) {}
+}
+function saveLocal(){
+  try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
+}
+function errText(e){
+  const code = e && e.code, msg = (e && e.message) || "";
+  if (code === "PGRST202" || code === "42883" || code === "42P01" || /function|schema cache/i.test(msg))
+    return "Supabase isn’t set up yet. Run setup.sql in the SQL Editor.";
+  if (code === "PGRST301" || /Invalid API key|JWT/i.test(msg)) return "Supabase rejected the key. Check SUPABASE_ANON_KEY.";
+  return "";
+}
+function writeErr(e){
+  console.error(e);
+  toast(errText(e) || "Couldn’t save that. Check your connection and try again.");
+}
+async function rpc(fn, args){
+  const { data, error } = await sb.rpc(fn, args);
+  if (error) throw error;
+  return data;
+}
+function announce(){ if (channel) channel.send({ type: "broadcast", event: "changed", payload: {} }).catch(() => {}); }
+
+// Writes update the screen straight away, then save, then re-read from Supabase.
+async function write(fn, args){
+  inflight++;
+  try { await rpc(fn, args); announce(); return true; }
+  catch (e){ writeErr(e); return false; }
+  finally { inflight--; if (inflight === 0) refresh(); }
+}
+
+async function refresh(){
+  if (mode !== "shared") return;
+  if (inflight > 0){ needRefresh = true; return; }
+  needRefresh = false;
+  const my = ++fetchSeq;
+  try {
+    const d = await rpc("get_group", { gid: groupId });
+    if (my !== fetchSeq || inflight > 0) return;
+    const g = (d && d.group) || {};
+    state.members = cleanMembers(g.members);
+    state.currency = typeof g.currency === "string" && g.currency ? g.currency.slice(0, 4) : "€";
+    state.entries = (Array.isArray(d && d.entries) ? d.entries : []).map(e => cleanEntry(e && e.id, e)).filter(Boolean);
+    if (pendingDelete && !state.entries.some(e => e.id === pendingDelete)) pendingDelete = null;
+    loaded = true; stale = false; broken = false; setupProblem = "";
+  } catch (e){
+    console.error(e);
+    const why = errText(e);
+    if (!loaded || why){ broken = true; setupProblem = why; loaded = true; }
+    else stale = true;
+  }
+  render();
+}
+
+async function saveSettings(next){
+  state.members = next.members; state.currency = next.currency;
+  if (mode === "shared"){ render(); return write("save_group", { gid: groupId, p_members: next.members, p_currency: next.currency }); }
+  saveLocal(); render(); return true;
+}
+async function addEntry(entry){
+  const id = uid();
+  state.entries.unshift(Object.assign({ id }, entry));
+  render();
+  if (mode === "shared") return write("add_entry", { gid: groupId, p_id: id, p_payer: entry.payer, p_amount: entry.amount,
+    p_kind: entry.kind, p_among: entry.among, p_note: entry.note, p_at: entry.at });
+  saveLocal(); return true;
+}
+async function deleteEntry(id){
+  state.entries = state.entries.filter(e => e.id !== id);
+  render();
+  if (mode === "shared") return write("delete_entry", { gid: groupId, p_id: id });
+  saveLocal();
+}
+
+/* ---------- events ---------- */
+document.addEventListener("submit", async ev => {
+  if (ev.target.id === "personForm"){
+    ev.preventDefault();
+    if (locked()) return;
+    const input = $("newPerson");
+    const name = input.value.trim().slice(0, 30);
+    if (!name) return;
+    if (state.members.some(m => m.name.toLowerCase() === name.toLowerCase())){ toast(`${name} is already on the list.`); return; }
+    input.value = "";
+    await saveSettings({ members: state.members.concat([{ id: uid(), name }]), currency: state.currency });
+    const i = $("newPerson"); if (i) i.focus();
+  }
+  if (ev.target.id === "entryForm"){
+    ev.preventDefault();
+    if (locked() || state.members.length < 2) return;
+    const amount = parseAmount($("amount").value);
+    if (!(amount > 0)){ toast("Enter an amount above zero, like 12.50."); $("amount").focus(); return; }
+    const among = ids().filter(id => !excluded.has(id));
+    if (!among.length){ toast("Pick at least one person to split between."); return; }
+    const kind = document.querySelector('input[name="kind"]:checked').value;
+    const entry = { payer: $("payer").value, amount, kind, among, note: $("note").value.trim().slice(0, 80), at: Date.now() };
+        $("amount").value = ""; $("note").value = ""; $("amount").focus();
+    const ok = await addEntry(entry);
+    if (ok) toast(`Added ${fmt(amount)} ${kind} from ${nameOf(entry.payer)}.`);
+  }
+});
+
+document.addEventListener("change", ev => {
+  const t = ev.target;
+  if (t.dataset && t.dataset.split){
+    if (t.checked) excluded.delete(t.dataset.split); else excluded.add(t.dataset.split);
+    renderForm();
+  }
+  if (t.id === "currency" && !locked()){
+    saveSettings({ members: state.members, currency: t.value });
+  }
+});
+
+document.addEventListener("click", async ev => {
+  if (ev.target.id === "copyLink"){
+    try { await navigator.clipboard.writeText(location.href); toast("Link copied. Anyone with it can view and edit."); }
+    catch (e){ toast("Copy the address from your browser’s address bar."); }
+    return;
+  }
+  const b = ev.target.closest("button[data-action]");
+  if (!b || b.disabled) return;
+  const act = b.dataset.action;
+  if (act === "remove-member"){
+    const id = b.dataset.id;
+    if (state.entries.some(e => e.payer === id || e.among.includes(id))){
+      toast(`${nameOf(id)} is in the history. Delete those entries first to remove them.`); return;
+    }
+    excluded.delete(id);
+    await saveSettings({ members: state.members.filter(m => m.id !== id), currency: state.currency });
+  }
+  if (act === "mark-paid"){
+    const from = b.dataset.from, to = b.dataset.to, amount = parseInt(b.dataset.amount, 10);
+    if (!(amount > 0)) return;
+    b.disabled = true;
+    const ok = await addEntry({ payer: from, amount, kind: "payment", among: [to], note: "", at: Date.now() });
+    if (ok) toast(`Recorded: ${nameOf(from)} paid ${nameOf(to)} ${fmt(amount)}.`);
+    else b.disabled = false;
+  }
+  if (act === "delete"){
+    const id = b.dataset.id;
+    if (pendingDelete === id){
+      pendingDelete = null; clearTimeout(pendingTimer);
+      await deleteEntry(id);
+    } else {
+      pendingDelete = id; clearTimeout(pendingTimer);
+      pendingTimer = setTimeout(() => { pendingDelete = null; renderHistory(); }, 3500);
+      renderHistory();
+    }
+  }
+});
+
+/* ---------- start ---------- */
+async function init(){
+  render();
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY){ mode = "local"; loadLocal(); render(); return; }
+
+  // Each group lives at a secret id in the link (#xxxx). Opening the bare URL starts a new group.
+  const h = location.hash.slice(1);
+  if (/^[A-Za-z0-9_-]{16,64}$/.test(h)) groupId = h;
+  else { groupId = randomId(); history.replaceState(null, "", "#" + groupId); }
+  window.addEventListener("hashchange", () => location.reload());
+
+  try {
+    const { createClient } = await import(SUPABASE_JS);
+    sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+  } catch (e){
+    console.error(e); mode = "local"; loadLocal(); render();
+    toast("Couldn’t load Supabase, so this is saved on this device only.");
+    return;
+  }
+
+  mode = "shared"; render();
+  const timer = setTimeout(() => { if (!loaded){ loaded = true; stale = true; render(); } }, 10000);
+  await refresh();
+  clearTimeout(timer);
+
+  // Live updates: when anyone saves, they ping this channel and everyone re-reads.
+  channel = sb.channel("split-" + groupId, { config: { broadcast: { self: false } } });
+  channel.on("broadcast", { event: "changed" }, () => refresh()).subscribe();
+
+  // Safety net in case a ping is missed.
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+  setInterval(() => { if (!document.hidden) refresh(); }, 30000);
+}
+init();
+</script>
+</body>
+</html>

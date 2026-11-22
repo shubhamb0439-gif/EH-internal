@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0A0A0A" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Event Horizon</title>
+  <link rel="icon" href="/brand/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script>
+    try { var t = localStorage.getItem('eh-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+</head>
+<body>
+  <div id="root">
+    <!-- Boot splash before JS: same look as the React <Splash/> so there's no flash. -->
+    <div class="boot"><img src="/brand/eh-mark-white.svg" alt="" width="96" height="96" /></div>
+  </div>
+  <style>
+    .boot{position:fixed;inset:0;display:grid;place-items:center;background:#0A0A0A}
+    html[data-theme="light"] .boot{background:#F4F4F2}
+    html[data-theme="light"] .boot img{filter:invert(1)}
+    .boot img{opacity:.9;animation:bootp 1.6s ease-in-out infinite}
+    @keyframes bootp{50%{opacity:.35}}
+  </style>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>
