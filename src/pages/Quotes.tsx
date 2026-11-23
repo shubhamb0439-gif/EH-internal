@@ -8,7 +8,7 @@ import { Icon } from '../components/Icon';
 import { Empty, Field, MoneyInput, Seg, Sheet, fmtDate, today } from '../components/Sheet';
 import { ClientSheet, PaymentSheet } from '../components/Forms';
 import { PageHead } from '../components/AppShell';
-import { buildQuotePdf, download, shareOrDownload } from '../pdf/quotePdf';
+import { buildQuotePdf, download, shareOrDownload, signersOf } from '../pdf/quotePdf';
 
 const STATUSES: QuoteStatus[] = ['draft', 'sent', 'accepted', 'rejected', 'expired'];
 
@@ -57,7 +57,7 @@ export function Quotes() {
                   <div className="amt">{inr(x.total)}<small><span className={`tag${x.status === 'accepted' || x.status === 'paid' ? ' solid' : x.status === 'draft' ? ' dash' : ''}`} style={{ height: 18 }}>{x.status}</span></small></div>
                 </Link>
                 <button className="icon-btn" aria-label="Download PDF" disabled={dl === x.id}
-                  onClick={async () => { setDl(x.id); try { await downloadPdf(x, db.settings); } catch { toast('Could not build the PDF'); } setDl(null); }}>
+                  onClick={async () => { setDl(x.id); try { await downloadPdf(x, db.settings, signersOf(db.partners)); } catch { toast('Could not build the PDF'); } setDl(null); }}>
                   <Icon name="download" />
                 </button>
               </div>
@@ -78,8 +78,8 @@ const sigOf = (r: Pick<Quote, 'client_id' | 'title' | 'issue_date' | 'valid_unti
 const docName = (k: DocKind | undefined) => (k === 'invoice' ? 'invoice' : 'quote');
 
 /** Build + download a saved quote/invoice (used by the list and by "download" on unsaved edits). */
-async function downloadPdf(q: Quote, settings: Parameters<typeof buildQuotePdf>[1]) {
-  const { blob, filename } = await buildQuotePdf(q, settings);
+async function downloadPdf(q: Quote, settings: Parameters<typeof buildQuotePdf>[1], signers: string[]) {
+  const { blob, filename } = await buildQuotePdf(q, settings, signers);
   download(blob, filename);
 }
 const plusDays = (iso: string, n: number) => { const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
@@ -226,7 +226,7 @@ export function QuoteEditor() {
     building.current = pdfSig;
     const sig = pdfSig;
     const t = setTimeout(() => {
-      buildQuotePdf(existing, db.settings)
+      buildQuotePdf(existing, db.settings, signersOf(db.partners))
         .then(({ blob, filename }) => { if (building.current === sig) setReady({ sig, blob, filename }); })
         .catch((e) => { console.error(e); toast(`PDF failed: ${(e as Error)?.message ?? e}`); building.current = null; });
     }, 150);
@@ -236,11 +236,11 @@ export function QuoteEditor() {
   /** Download always works: unsaved changes are saved first. */
   const downloadNow = async () => {
     if (!dirty && pdfReady && ready) { download(ready.blob, ready.filename); toast('PDF downloaded'); return; }
-    if (readOnly && existing && db) { setBusy('download'); await downloadPdf(existing, db.settings).catch(() => toast('Could not build the PDF')); setBusy(null); return; }
+    if (readOnly && existing && db) { setBusy('download'); await downloadPdf(existing, db.settings, signersOf(db.partners)).catch(() => toast('Could not build the PDF')); setBusy(null); return; }
     const q = await save();
     if (!q || !db) return;
     setBusy('download');
-    try { await downloadPdf(q, db.settings); toast('Saved · PDF downloaded'); } catch { toast('Could not build the PDF'); }
+    try { await downloadPdf(q, db.settings, signersOf(db.partners)); toast('Saved · PDF downloaded'); } catch { toast('Could not build the PDF'); }
     setBusy(null);
   };
 

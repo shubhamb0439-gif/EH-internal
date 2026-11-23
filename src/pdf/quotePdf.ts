@@ -1,6 +1,17 @@
 // Builds the quotation PDF in the browser (works offline, on phones too).
 // Standard PDF fonts have no ₹ glyph, so amounts print as "INR 1,35,700.00".
-import type { CompanySettings, Quote } from '../data/types';
+import type { CompanySettings, Partner, Quote } from '../data/types';
+import sign1 from '../assets/signatures/sign-1.png';
+import sign2 from '../assets/signatures/sign-2.png';
+
+/** Signature images, in the same order as the partners (by their sort order). */
+const SIGNATURES = [sign1, sign2];
+export const signersOf = (partners: Partner[]) =>
+  partners.filter((p) => p.active).sort((a, b) => a.sort - b.sort).map((p) => p.name);
+
+async function imgSize(url: string): Promise<{ url: string; w: number; h: number } | null> {
+  try { const img = new Image(); img.src = url; await img.decode(); return { url, w: img.naturalWidth, h: img.naturalHeight }; } catch { return null; }
+}
 import { lockupSvg } from '../lib/brand';
 import { inWords } from '../lib/money';
 import { quoteTotals } from '../lib/finance';
@@ -22,7 +33,7 @@ async function svgToPng(svg: string, width: number, height: number): Promise<str
   } finally { URL.revokeObjectURL(url); }
 }
 
-export async function buildQuotePdf(q: Quote, co: CompanySettings): Promise<{ blob: Blob; filename: string }> {
+export async function buildQuotePdf(q: Quote, co: CompanySettings, signers: string[] = []): Promise<{ blob: Blob; filename: string }> {
   const [{ jsPDF }, at] = await Promise.all([import('jspdf'), import('jspdf-autotable')]);
   // jspdf-autotable ships ESM + UMD; depending on the bundler the function is at .default or .default.default
   const autoTable = (typeof at.default === 'function' ? at.default : (at.default as unknown as { default: typeof at.default }).default);
@@ -158,12 +169,25 @@ export async function buildQuotePdf(q: Quote, co: CompanySettings): Promise<{ bl
   const right = block(W - M - 62, 62, 'Bank details', co.bank_details, y);
   y = Math.max(left2, right) + 8;
 
-  // ---- signature
-  if (y > 262) { doc.addPage(); y = 30; }
-  doc.setDrawColor(...INK).setLineWidth(0.3).line(W - M - 58, y + 10, W - M, y + 10);
+  // ---- signatures: both partners sign as authorised signatories
+  if (y > 244) { doc.addPage(); y = 30; }
+  const sigs = (await Promise.all(SIGNATURES.map(imgSize))).filter((x): x is NonNullable<typeof x> => !!x);
+  const colW = 44, gap = 10, boxH = 20;
+  const x0 = W - M - (sigs.length * colW + (sigs.length - 1) * gap);
   doc.setFontSize(7.5).setTextColor(...GREY);
-  rightSpaced(`FOR ${co.legal_name.toUpperCase()}`, y + 15, 0.5);
-  rightSpaced('AUTHORISED SIGNATORY', y + 19, 0.5);
+  doc.text(`FOR ${co.legal_name.toUpperCase()}`, x0, y, { charSpace: 0.5 });
+  const lineY = y + 4 + boxH;
+  sigs.forEach((sg, i) => {
+    const cx = x0 + i * (colW + gap);
+    // fit inside the box, keep the aspect ratio, sit on the line
+    const sc = Math.min((colW - 2) / sg.w, boxH / sg.h);
+    const w = sg.w * sc, h = sg.h * sc;
+    try { doc.addImage(sg.url, 'PNG', cx + (colW - w) / 2, lineY - h + 1.5, w, h); } catch { /* image optional */ }
+    doc.setDrawColor(...INK).setLineWidth(0.3).line(cx, lineY + 2, cx + colW, lineY + 2);
+    doc.setFontSize(8.6).setTextColor(...INK);
+    if (signers[i]) doc.text(signers[i], cx, lineY + 6.5);
+    doc.setFontSize(6.8).setTextColor(...GREY).text('AUTHORISED SIGNATORY', cx, lineY + (signers[i] ? 10.5 : 6.5), { charSpace: 0.4 });
+  });
 
   // ---- footer on every page
   const pages = doc.getNumberOfPages();
