@@ -200,6 +200,7 @@ export function QuoteEditor() {
         let e = e0;
         // database without the 005 update: save anyway, names just stay on
         if (/show_names/.test((e as { message?: string })?.message ?? '')) {
+          if (rec.show_names === false) throw new Error('Hiding names needs one database step: run supabase/updates/005_signature_names.sql in Supabase.');
           const { show_names: _s, ...rest } = rec;
           try {
             if (existing) { await repo.update('quotes', existing.id, rest); return { ...existing, ...rest } as Quote; }
