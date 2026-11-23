@@ -73,8 +73,8 @@ export function Quotes() {
 interface Line { key: string; name: string; description: string; qty: string; unit: string; rate: string; more?: boolean }
 const toLine = (it: QuoteItem): Line => ({ key: crypto.randomUUID(), name: it.name, description: it.description, qty: String(it.qty), unit: it.unit, rate: toRupeeInput(it.rate), more: Number(it.qty) !== 1 || !!it.description });
 const blankLine = (): Line => ({ key: crypto.randomUUID(), name: '', description: '', qty: '1', unit: 'unit', rate: '' });
-const sigOf = (r: Pick<Quote, 'client_id' | 'title' | 'issue_date' | 'valid_until' | 'status' | 'items' | 'discount' | 'tax_pct' | 'notes' | 'terms' | 'kind' | 'paid'>) =>
-  JSON.stringify([r.client_id, r.title, r.issue_date, r.valid_until, r.status, r.items, r.discount, Number(r.tax_pct), r.notes, r.terms, r.kind ?? 'quote', Number(r.paid ?? 0)]);
+const sigOf = (r: Pick<Quote, 'client_id' | 'title' | 'issue_date' | 'valid_until' | 'status' | 'items' | 'discount' | 'tax_pct' | 'notes' | 'terms' | 'kind' | 'paid' | 'show_names'>) =>
+  JSON.stringify([r.client_id, r.title, r.issue_date, r.valid_until, r.status, r.items, r.discount, Number(r.tax_pct), r.notes, r.terms, r.kind ?? 'quote', Number(r.paid ?? 0), r.show_names !== false]);
 const docName = (k: DocKind | undefined) => (k === 'invoice' ? 'invoice' : 'quote');
 
 /** Build + download a saved quote/invoice (used by the list and by "download" on unsaved edits). */
@@ -109,6 +109,7 @@ export function QuoteEditor() {
   const [tax, setTax] = useState('18');
   const [notes, setNotes] = useState('');
   const [terms, setTerms] = useState('');
+  const [showNames, setShowNames] = useState(true);
   const [picker, setPicker] = useState(false);
   const [newClient, setNewClient] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -127,7 +128,7 @@ export function QuoteEditor() {
     if (existing) {
       setClientId(existing.client_id ?? ''); setTitle(existing.title); setIssue(existing.issue_date); setValid(existing.valid_until ?? '');
       setStatus(existing.status); setLines(existing.items.map(toLine)); setDiscount(toRupeeInput(existing.discount));
-      setKind(existing.kind ?? 'quote'); setPaid(existing.paid ? toRupeeInput(existing.paid) : '');
+      setKind(existing.kind ?? 'quote'); setShowNames(existing.show_names !== false); setPaid(existing.paid ? toRupeeInput(existing.paid) : '');
       setTax(String(existing.tax_pct)); setNotes(existing.notes); setTerms(existing.terms || (existing.kind === 'invoice' ? '' : db?.settings.quote_terms ?? ''));
     } else {
       const dup = params.get('from') ? db.quotes.find((x) => x.id === params.get('from')) : undefined;
@@ -168,7 +169,7 @@ export function QuoteEditor() {
   const record = (): Omit<Quote, 'id' | 'created_at' | 'number'> => ({
     client_id: clientId || null, client_snapshot: snapshot(client), title: title.trim(), issue_date: issue, valid_until: valid || null, status,
     items, discount: disc, tax_pct: Number(tax) || 0, subtotal: totals.subtotal, tax_amount: totals.tax_amount, total: totals.total, notes: notes.trim(), terms: terms.trim(),
-    kind, paid: paidNum,
+    kind, paid: paidNum, show_names: showNames,
   });
 
   const rec_ = record();
@@ -195,13 +196,22 @@ export function QuoteEditor() {
         const pid = params.get('payment');
         if (pid) await repo.update('client_payments', pid, { quote_id: created.id });
         return created;
-      } catch (e) {
+      } catch (e0) {
+        let e = e0;
+        // database without the 005 update: save anyway, names just stay on
+        if (/show_names/.test((e as { message?: string })?.message ?? '')) {
+          const { show_names: _s, ...rest } = rec;
+          try {
+            if (existing) { await repo.update('quotes', existing.id, rest); return { ...existing, ...rest } as Quote; }
+            return await repo.insert<Quote>('quotes', rest);
+          } catch (e1) { e = e1; }
+        }
         const m = (e as { message?: string })?.message ?? '';
         const notMigrated = /\b(kind|paid)\b/.test(m) || /quotes_status_check/.test(m);
         if (!notMigrated) throw e;
         if (isInv) throw new Error('Invoices need one more database step: run supabase/updates/004_invoices.sql in Supabase.');
         // plain quotes still save on a database that hasn't had the invoice update yet
-        const { kind: _k, paid: _p, ...old } = rec;
+        const { kind: _k, paid: _p, show_names: _n, ...old } = rec;
         if (existing) { await repo.update('quotes', existing.id, old); return { ...existing, ...old } as Quote; }
         return repo.insert<Quote>('quotes', old);
       }
@@ -378,6 +388,10 @@ export function QuoteEditor() {
               <Field label="Status"><Seg value={status} onChange={setStatus} options={(isInv ? (['draft', 'sent', 'paid'] as QuoteStatus[]) : STATUSES.slice(0, 4)).map((s) => ({ value: s, label: s[0].toUpperCase() + s.slice(1) }))} /></Field>
               <Field label="Notes (printed)"><textarea className="textarea" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Scope, inclusions, timelines…" /></Field>
               <Field label="Terms"><textarea className="textarea" value={terms} onChange={(e) => setTerms(e.target.value)} /></Field>
+              <button type="button" className="toggle-row" onClick={() => setShowNames(!showNames)} aria-pressed={showNames}>
+                <span className={`check${showNames ? ' on' : ''}`}><Icon name="check" /></span>
+                <span><b>Names under signatures</b><small>{showNames ? 'Partner names are printed under the signatures.' : 'Only the signatures are printed, no names.'}</small></span>
+              </button>
               {existing && can('money.delete') && <button type="button" className="btn danger sm" onClick={remove}><Icon name="trash" />Delete quote</button>}
             </section>
           </div>

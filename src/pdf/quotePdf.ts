@@ -10,7 +10,15 @@ export const signersOf = (partners: Partner[]) =>
   partners.filter((p) => p.active).sort((a, b) => a.sort - b.sort).map((p) => p.name);
 
 async function imgSize(url: string): Promise<{ url: string; w: number; h: number } | null> {
-  try { const img = new Image(); img.src = url; await img.decode(); return { url, w: img.naturalWidth, h: img.naturalHeight }; } catch { return null; }
+  try {
+    const img = new Image(); img.src = url; await img.decode();
+    // ~600 dpi at print size is plenty; keeps the PDF small
+    const k = Math.min(1, 480 / img.naturalWidth);
+    const w = Math.round(img.naturalWidth * k), h = Math.round(img.naturalHeight * k);
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    c.getContext('2d')!.drawImage(img, 0, 0, w, h);
+    return { url: c.toDataURL('image/png'), w, h };
+  } catch { return null; }
 }
 import { lockupSvg } from '../lib/brand';
 import { inWords } from '../lib/money';
@@ -53,7 +61,7 @@ export async function buildQuotePdf(q: Quote, co: CompanySettings, signers: stri
   // ---- header
   const lock = lockupSvg('#0C0C0C');
   const logoW = 66, logoH = (logoW * lock.height) / lock.width;
-  try { doc.addImage(await svgToPng(lock.svg, 1400, Math.round((1400 * lock.height) / lock.width)), 'PNG', M - 1, 14, logoW, logoH); } catch { /* logo optional */ }
+  try { doc.addImage(await svgToPng(lock.svg, 1400, Math.round((1400 * lock.height) / lock.width)), 'PNG', M - 1, 14, logoW, logoH, 'logo', 'FAST'); } catch { /* logo optional */ }
 
   doc.setTextColor(...INK);
   doc.setFont('helvetica', 'normal').setFontSize(24);
@@ -167,12 +175,14 @@ export async function buildQuotePdf(q: Quote, co: CompanySettings, signers: stri
   const left = block(M, 100, 'Notes', q.notes, y);
   const left2 = block(M, 100, 'Terms', q.terms || (isInv ? '' : co.quote_terms), left);
   const right = block(W - M - 62, 62, 'Bank details', co.bank_details, y);
-  y = Math.max(left2, right) + 8;
+  y = Math.max(left2, right) + 4;
 
   // ---- signatures: both partners sign as authorised signatories
-  if (y > 244) { doc.addPage(); y = 30; }
+  const names = q.show_names !== false;
+  const colW = 34, gap = 10, boxH = 12;
+  // keep the whole block on this page unless it really can't fit above the footer
+  if (y + 4 + boxH + 2 + (names ? 9 : 5) > 280) { doc.addPage(); y = 30; }
   const sigs = (await Promise.all(SIGNATURES.map(imgSize))).filter((x): x is NonNullable<typeof x> => !!x);
-  const colW = 44, gap = 10, boxH = 20;
   const x0 = W - M - (sigs.length * colW + (sigs.length - 1) * gap);
   doc.setFontSize(7.5).setTextColor(...GREY);
   doc.text(`FOR ${co.legal_name.toUpperCase()}`, x0, y, { charSpace: 0.5 });
@@ -182,11 +192,12 @@ export async function buildQuotePdf(q: Quote, co: CompanySettings, signers: stri
     // fit inside the box, keep the aspect ratio, sit on the line
     const sc = Math.min((colW - 2) / sg.w, boxH / sg.h);
     const w = sg.w * sc, h = sg.h * sc;
-    try { doc.addImage(sg.url, 'PNG', cx + (colW - w) / 2, lineY - h + 1.5, w, h); } catch { /* image optional */ }
+    try { doc.addImage(sg.url, 'PNG', cx + (colW - w) / 2, lineY - h + 1.5, w, h, 'sig' + i, 'FAST'); } catch { /* image optional */ }
     doc.setDrawColor(...INK).setLineWidth(0.3).line(cx, lineY + 2, cx + colW, lineY + 2);
     doc.setFontSize(8.6).setTextColor(...INK);
-    if (signers[i]) doc.text(signers[i], cx, lineY + 6.5);
-    doc.setFontSize(6.8).setTextColor(...GREY).text('AUTHORISED SIGNATORY', cx, lineY + (signers[i] ? 10.5 : 6.5), { charSpace: 0.4 });
+    const named = names && !!signers[i];
+    if (named) doc.text(signers[i], cx, lineY + 6.5);
+    doc.setFontSize(6.5).setTextColor(...GREY).text('AUTHORISED SIGNATORY', cx, lineY + (named ? 10.5 : 6.5), { charSpace: 0.3 });
   });
 
   // ---- footer on every page

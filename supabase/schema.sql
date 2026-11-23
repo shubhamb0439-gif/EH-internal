@@ -574,3 +574,6 @@ begin
   new.updated_at := now();
   return new;
 end $$;
+
+-- v5: show / hide partner names under the signatures (updates/005_signature_names.sql)
+alter table public.quotes add column if not exists show_names boolean not null default true;

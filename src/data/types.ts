@@ -58,6 +58,8 @@ export interface Quote {
   kind?: DocKind;
   /** invoices: how much of the total has been received, in paise */
   paid?: number;
+  /** print the partners' names under their signatures (default on) */
+  show_names?: boolean;
   client_id: string | null;
   client_snapshot: Partial<Pick<Client, 'name' | 'contact_name' | 'email' | 'phone' | 'gstin' | 'address' | 'city'>>;
   title: string;
