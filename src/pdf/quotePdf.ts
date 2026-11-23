@@ -41,7 +41,22 @@ async function svgToPng(svg: string, width: number, height: number): Promise<str
   } finally { URL.revokeObjectURL(url); }
 }
 
-export async function buildQuotePdf(q: Quote, co: CompanySettings, signers: string[] = []): Promise<{ blob: Blob; filename: string }> {
+/** The built-in PDF font only has Latin-1 glyphs: anything else (₹, smart quotes, emoji…) prints as garbage
+ *  and spaces the whole line out. Swap the common ones for plain equivalents and drop the rest. */
+export function pdfSafe(text: string): string {
+  return text
+    .replace(/₹\s*/g, 'Rs. ')
+    .replace(/[‘’‚′]/g, "'").replace(/[“”„″]/g, '"')
+    .replace(/[–—−]/g, '-').replace(/[•●▪‣⁃]/g, '-')
+    .replace(/…/g, '...').replace(/[   \t]/g, ' ').replace(/\r/g, '')
+    .replace(/[^\n\x20-\x7E\xA0-\xFF]/g, '');
+}
+const clean = <T,>(v: T): T => (typeof v === 'string' ? pdfSafe(v)
+  : Array.isArray(v) ? v.map(clean)
+  : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, clean(x)])) : v) as T;
+
+export async function buildQuotePdf(q0: Quote, co0: CompanySettings, signers0: string[] = []): Promise<{ blob: Blob; filename: string }> {
+  const q = clean(q0), co = clean(co0), signers = clean(signers0);
   const [{ jsPDF }, at] = await Promise.all([import('jspdf'), import('jspdf-autotable')]);
   // jspdf-autotable ships ESM + UMD; depending on the bundler the function is at .default or .default.default
   const autoTable = (typeof at.default === 'function' ? at.default : (at.default as unknown as { default: typeof at.default }).default);
@@ -161,21 +176,44 @@ export async function buildQuotePdf(q: Quote, co: CompanySettings, signers: stri
   y += words.length * 4 + 8;
 
   // ---- notes / terms / bank
+  // long text flows line by line onto the next page instead of running into the footer
+  const BOTTOM = 276;
+  const pageNo = () => doc.getCurrentPageInfo().pageNumber;
   const block = (x: number, width: number, label: string, text: string, y0: number) => {
     if (!text.trim()) return y0;
-    doc.setFontSize(7.5).setTextColor(...GREY).text(label.toUpperCase(), x, y0, { charSpace: 0.6 });
-    doc.setFontSize(8.6).setTextColor(50, 50, 48);
-    const lines = doc.splitTextToSize(text, width) as string[];
-    doc.text(lines, x, y0 + 5.5, { lineHeightFactor: 1.45 });
-    return y0 + 5.5 + lines.length * 4.4 + 6;
+    let yy = y0;
+    if (yy + 12 > BOTTOM) { doc.addPage(); yy = 24; }
+    doc.setFontSize(7.5).setTextColor(...GREY).text(label.toUpperCase(), x, yy, { charSpace: 0.6 });
+    yy += 5.5;
+    doc.setFontSize(8.6);
+    const lines = doc.splitTextToSize(text.trim(), width) as string[];
+    for (const line of lines) {
+      if (yy > BOTTOM) { doc.addPage(); yy = 24; }
+      doc.setFontSize(8.6).setTextColor(50, 50, 48).text(line, x, yy);
+      yy += 4.4;
+    }
+    return yy + 6;
   };
   if (y > 240) { doc.addPage(); y = 24; }
   doc.setDrawColor(...LINE).setLineWidth(0.2).line(M, y - 4, W - M, y - 4);
   y += 2;
-  const left = block(M, 100, 'Notes', q.notes, y);
-  const left2 = block(M, 100, 'Terms', q.terms || (isInv ? '' : co.quote_terms), left);
+  const hasBank = !!co.bank_details.trim();
+  // left column stops short of the signature block so the two can sit side by side
+  const leftW = 98;
+  const yTop = y;
+  const startPage = pageNo();
   const right = block(W - M - 62, 62, 'Bank details', co.bank_details, y);
-  y = Math.max(left2, right) + 4;
+  const rightPage = pageNo();
+  doc.setPage(startPage);
+  const left = block(M, leftW, 'Notes', q.notes, y);
+  const left2 = block(M, leftW, 'Terms', q.terms || (isInv ? '' : co.quote_terms), left);
+  const leftPage = pageNo();
+  const lastPage = Math.max(leftPage, rightPage);
+  doc.setPage(lastPage);
+  y = (leftPage === rightPage ? Math.max(left2, right) : leftPage > rightPage ? left2 : right) + 4;
+  // signatures go in the right column (under bank details) when there's room, instead of after long terms
+  const sigTop = hasBank ? right : yTop;
+  if (rightPage === startPage && sigTop + 4 + 12 + 2 + 9 <= 280 && (leftPage > startPage || sigTop < y)) { doc.setPage(startPage); y = sigTop; }
 
   // ---- signatures: both partners sign as authorised signatories
   const names = q.show_names !== false;
