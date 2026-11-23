@@ -459,14 +459,18 @@ button.li:hover, a.li:hover { background: var(--surface-3); }
 .dock-item span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 400px) { .dock { padding: 0 4px; grid-template-columns: 1fr 1fr 1fr 68px 1fr 1fr 1fr; } .dock-item { font-size: 8.5px; letter-spacing: .04em; } .dock-item svg { width: 20px; height: 20px; } }
 @media (min-width: 1024px) {
-  .dock-wrap { padding-bottom: 22px; }
-  .dock { max-width: 660px; height: 76px; border-radius: 30px; transform: perspective(1100px) rotateX(9deg); }
-  .dock-item { height: 58px; font-size: 10px; }
+  /* desktop: same dock, stretched wider with roomier tabs */
+  .dock-wrap { padding: 0 40px 22px; }
+  .dock { max-width: 980px; height: 80px; border-radius: 30px; padding: 0 14px; gap: 6px;
+    grid-template-columns: 1fr 1fr 1fr 110px 1fr 1fr 1fr; transform: perspective(1400px) rotateX(7deg); }
+  .dock-item { height: 60px; margin: 0 4px; flex-direction: row; gap: 10px; font-size: 11px; letter-spacing: .14em; }
+  .dock-item svg { width: 20px; height: 20px; }
   .dock-item:hover { color: #fff; }
-  .dock-pill { height: 58px; top: 9px; }
-  .fab { width: 66px; height: 66px; margin-top: -34px; }
-  .toast { bottom: calc(var(--dock-h) + 54px); }
-  .qtotal-bar { bottom: calc(var(--dock-h) + 40px); }
+  .dock-pill { height: 60px; top: 10px; }
+  .dock-pill::after { bottom: 6px; }
+  .fab { width: 68px; height: 68px; margin-top: -36px; }
+  .toast { bottom: calc(var(--dock-h) + 58px); }
+  .qtotal-bar { bottom: calc(var(--dock-h) + 44px); }
   .topbar { margin-bottom: 30px; }
 }
 .topbar-actions { display: flex; align-items: center; gap: 8px; }
