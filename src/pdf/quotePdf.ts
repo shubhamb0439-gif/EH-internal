@@ -186,11 +186,21 @@ export async function buildQuotePdf(q0: Quote, co0: CompanySettings, signers0: s
     doc.setFontSize(7.5).setTextColor(...GREY).text(label.toUpperCase(), x, yy, { charSpace: 0.6 });
     yy += 5.5;
     doc.setFontSize(8.6);
-    const lines = doc.splitTextToSize(text.trim(), width) as string[];
-    for (const line of lines) {
-      if (yy > BOTTOM) { doc.addPage(); yy = 24; }
-      doc.setFontSize(8.6).setTextColor(50, 50, 48).text(line, x, yy);
-      yy += 4.4;
+    const breakPage = () => {
+      doc.addPage(); yy = 22;
+      doc.setFontSize(7.5).setTextColor(...GREY).text(`${label.toUpperCase()} (CONTINUED)`, x, yy, { charSpace: 0.6 });
+      yy += 5.5;
+    };
+    // paragraph by paragraph, so a numbered point isn't split across pages (unless it's huge)
+    for (const para of text.trim().split(/\n/)) {
+      doc.setFontSize(8.6);
+      const lines = (para.trim() ? doc.splitTextToSize(para, width) : ['']) as string[];
+      if (lines.length > 1 && lines.length <= 5 && yy + (lines.length - 1) * 4.4 > BOTTOM) breakPage();
+      for (const line of lines) {
+        if (yy > BOTTOM) breakPage();
+        doc.setFontSize(8.6).setTextColor(50, 50, 48).text(line, x, yy);
+        yy += 4.4;
+      }
     }
     return yy + 6;
   };
@@ -213,7 +223,8 @@ export async function buildQuotePdf(q0: Quote, co0: CompanySettings, signers0: s
   y = (leftPage === rightPage ? Math.max(left2, right) : leftPage > rightPage ? left2 : right) + 4;
   // signatures go in the right column (under bank details) when there's room, instead of after long terms
   const sigTop = hasBank ? right : yTop;
-  if (rightPage === startPage && sigTop + 4 + 12 + 2 + 9 <= 280 && (leftPage > startPage || sigTop < y)) { doc.setPage(startPage); y = sigTop; }
+  // …but only when the terms finish on that page; if they run over, sign after the last line
+  if (rightPage === startPage && leftPage === startPage && sigTop + 4 + 12 + 2 + 9 <= 280) { doc.setPage(startPage); y = sigTop; }
 
   // ---- signatures: both partners sign as authorised signatories
   const names = q.show_names !== false;
